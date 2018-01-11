@@ -31,11 +31,11 @@ class Block {
     /**
      * Draws a block
      */
-    void draw(Graphics g){
-        g.setColor(color);
-        g.fillRect(x * blockSize, y * blockSize, blockSize, blockSize);
-        g.setColor(new Color(0,0,0));
-        g.drawRect(x * blockSize, y * blockSize, blockSize, blockSize);
+    void draw(Graphics graphics){
+        graphics.setColor(color);
+        graphics.fillRect(x * blockSize, y * blockSize, blockSize, blockSize);
+        graphics.setColor(new Color(0,0,0));
+        graphics.drawRect(x * blockSize, y * blockSize, blockSize, blockSize);
     }
 
     /**

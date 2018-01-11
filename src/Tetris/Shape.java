@@ -28,16 +28,16 @@ abstract class Shape {
         }
     }
 
-    /********************************************
-     * Draws the shape
-     ********************************************/
-    void draw(Graphics g){
-        g.setColor(color);
-
+    /**
+     * Draws the shape by calling the blocks draw method
+     */
+    void draw(Graphics graphics){
+        graphics.setColor(color);
         for (int i = 0; i < blocks.length; i++) {
-            blocks[i].draw(g);
+            blocks[i].draw(graphics);
         }
     }
+
 }
 
 /**

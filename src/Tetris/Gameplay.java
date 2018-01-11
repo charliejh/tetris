@@ -9,7 +9,7 @@ import javax.swing.Timer;
 import static Tetris.Shape.rotation;
 
 class Gameplay extends JComponent implements KeyListener {
-    
+
     private Frame frame;
     /** An ArrayList of the 7 shapes to drop down */
     private ArrayList<Shape> nextShapes = new ArrayList<>();
@@ -17,7 +17,7 @@ class Gameplay extends JComponent implements KeyListener {
     private Shape activeShape;
     /** An ArrayList of each fallen block that hasn't been cleared */
     private ArrayList<Block> usedBlocks = new ArrayList<>();
-    /** Variables used for the time */
+    /** Variables used for the timer */
     private int timeVal = 900;
     private int fastTime = 50;
     private int dropTime = 0;
@@ -33,7 +33,7 @@ class Gameplay extends JComponent implements KeyListener {
     /**
      * Constructor
      */
-    Gameplay(Frame frame) {
+    public Gameplay(Frame frame) {
         this.frame = frame;
         frame.addKeyListener(this);
         makeShapes();
@@ -46,14 +46,16 @@ class Gameplay extends JComponent implements KeyListener {
      */
     private void makeShapes(){
         rotation = 0;
-        nextShapes.add(new sqShape());
-        nextShapes.add(new lineShape());
-        nextShapes.add(new jShape());
-        nextShapes.add(new lShape());
-        nextShapes.add(new tShape());
-        nextShapes.add(new sShape());
-        nextShapes.add(new zShape());
-        Collections.shuffle(nextShapes);
+        ArrayList<Shape> tempShapeArrayList = new ArrayList<>();
+        tempShapeArrayList.add(new sqShape());
+        tempShapeArrayList.add(new lineShape());
+        tempShapeArrayList.add(new jShape());
+        tempShapeArrayList.add(new lShape());
+        tempShapeArrayList.add(new tShape());
+        tempShapeArrayList.add(new sShape());
+        tempShapeArrayList.add(new zShape());
+        Collections.shuffle(tempShapeArrayList);
+        nextShapes.addAll(tempShapeArrayList);
     }
 
     /**
@@ -71,22 +73,23 @@ class Gameplay extends JComponent implements KeyListener {
     public void paintComponent(Graphics graphics) {
         drawGridBackground(graphics);
         drawScoreBoard(graphics);
+        drawNextShape(graphics);
         activeShape.draw(graphics);
         for (int i = 0; i < usedBlocks.size(); i++) {
             usedBlocks.get(i).draw(graphics);
         }
         if(gamePaused){
-            drawPauseScreen(graphics);
+            drawPauseScreen(graphics, "Paused!", 100);
         }
         if(gameOver){
-            drawGameOverScreen(graphics);
+            drawPauseScreen(graphics, "Game Over!", 70);
         }
     }
 
     /**
      * Updates the game
      */
-    void update() {
+    private void update() {
         boolean justCreated = false;
         dropTime += 10;
         if(dropTime >= timeVal){
@@ -95,7 +98,7 @@ class Gameplay extends JComponent implements KeyListener {
                     Block blocks = new Block(activeShape.blocks[i].getX(), activeShape.blocks[i].getY(), activeShape.color);
                     usedBlocks.add(blocks);
                 }
-                if (nextShapes.isEmpty()) {
+                if (nextShapes.size() < 2) {
                     makeShapes();
                 }
                 rotation = 0;
@@ -316,6 +319,47 @@ class Gameplay extends JComponent implements KeyListener {
     }
 
     /**
+     * Draws the next shape in the scoreboard area
+     */
+    private void drawNextShape(Graphics graphics) {
+        graphics.setColor(new Color(0,0,0, 120));
+        graphics.fillRect(420, 260,4 * 40, 3 * 40);
+        Shape nextShapeToDraw;
+        if(nextShapes.get(0).getClass() == lineShape.class){
+            nextShapeToDraw = new lineShape();
+            for (int i = 1; i < 4; i++) {
+                nextShapeToDraw.blocks[i].move(nextShapeToDraw.center.getX() + nextShapeToDraw.shapeArr[1][i][0], nextShapeToDraw.center.getY() + nextShapeToDraw.shapeArr[1][i][1]);
+            }
+            nextShapeToDraw.move(8, 7);
+        }
+        else if(nextShapes.get(0).getClass() == jShape.class) {
+            nextShapeToDraw = new jShape();
+            nextShapeToDraw.move(7, 7);
+        }
+        else if(nextShapes.get(0).getClass() == lShape.class) {
+            nextShapeToDraw = new lShape();
+            nextShapeToDraw.move(8, 7);
+        }
+        else if(nextShapes.get(0).getClass() == tShape.class) {
+            nextShapeToDraw = new tShape();
+            nextShapeToDraw.move(8, 7);
+        }
+        else if(nextShapes.get(0).getClass() == sShape.class) {
+            nextShapeToDraw = new sShape();
+            nextShapeToDraw.move(8, 7);
+        }
+        else if (nextShapes.get(0).getClass() == zShape.class) {
+            nextShapeToDraw = new zShape();
+            nextShapeToDraw.move(8, 7);
+        }
+        else {
+            nextShapeToDraw = new sqShape();
+            nextShapeToDraw.move(8, 7);
+        }
+        nextShapeToDraw.draw(graphics);
+    }
+
+    /**
      * Draws the grid background
      */
     private void drawGridBackground(Graphics graphics) {
@@ -335,37 +379,26 @@ class Gameplay extends JComponent implements KeyListener {
      */
     private void drawScoreBoard(Graphics graphics) {
         graphics.setColor(Color.white);
-        graphics.setFont(new Font("Times New Roman", Font.BOLD, 25));
-        graphics.drawString("Charlie Harris", 425, 40);
+        graphics.setFont(new Font("Verdana", Font.PLAIN, 20));
+        graphics.drawString("Charlie Harris", 430, 45);
         graphics.drawString("1505033", 455, 70);
-        graphics.drawString("Score: " + score, 460, 140);
-        graphics.drawString("Level: " + level, 460, 200);
-        graphics.setFont(new Font("Times New Roman", Font.BOLD, 20));
-        graphics.drawString("P to Pause Game", 428, 350);
-        graphics.drawString("R to Resume Game", 420, 400);
+        graphics.drawString("Score: " + score, 455, 120);
+        graphics.drawString("Level: " + level, 462, 150);
+        graphics.drawString("Next Shape:", 440, 230);
+        graphics.setFont(new Font("Verdana", Font.PLAIN, 15));
+        graphics.drawString("P to Pause Game", 438, 450);
+        graphics.drawString("R to Resume Game", 428, 500);
     }
 
     /**
      * Draws the pause screen
      */
-    private void drawPauseScreen(Graphics graphics) {
+    private void drawPauseScreen(Graphics graphics, String text, int x) {
         graphics.setColor(new Color(0,0,0, 120));
         graphics.fillRect(0,0,10 * 40, 20 *40);
         graphics.setColor(Color.white);
-        graphics.setFont(new Font("Times New Roman", Font.BOLD, 50));
-        graphics.drawString("Paused!", 100, 400);
-    }
-
-    /**
-     * Draws the game over screen
-     */
-    private void drawGameOverScreen(Graphics graphics) {
-        graphics.setColor(new Color(0,0,0, 120));
-        graphics.fillRect(0,0,10 * 40, 20 * 40);
-        graphics.setColor(Color.white);
-        graphics.setFont(new Font("Times New Roman", Font.BOLD, 50));
-        graphics.drawString("Game Over!", 80, 350);
-        graphics.drawString("Score: " + score, 110, 400);
+        graphics.setFont(new Font("Verdana", Font.PLAIN, 40));
+        graphics.drawString(text, x, 400);
     }
 
     /**
