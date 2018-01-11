@@ -10,6 +10,7 @@ import static Tetris.Shape.rotation;
 
 class Gameplay extends JComponent implements KeyListener {
 
+    /** The frame to the application */
     private Frame frame;
     /** An ArrayList of the 7 shapes to drop down */
     private ArrayList<Shape> nextShapes = new ArrayList<>();
