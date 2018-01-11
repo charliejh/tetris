@@ -325,6 +325,14 @@ class Gameplay extends JComponent implements KeyListener {
     private void drawNextShape(Graphics graphics) {
         graphics.setColor(new Color(0,0,0, 120));
         graphics.fillRect(420, 260,4 * 40, 3 * 40);
+        graphics.setColor(new Color(0,0,0));
+        graphics.drawRect(420, 260,4 * 40, 3 * 40);
+        for (int i = 280; i < 400; i+= 40) {
+            graphics.drawLine(420, i, 420 + (4 * 40), i );
+        }
+        for (int i = 440; i < 620; i+= 40) {
+            graphics.drawLine(i, 260, i, 260 + (3 * 40) );
+        }
         Shape nextShapeToDraw;
         if(nextShapes.get(0).getClass() == lineShape.class){
             nextShapeToDraw = new lineShape();
