@@ -283,25 +283,10 @@ class Gameplay extends JComponent implements KeyListener {
                 }
                 if(clearLine.size() == 10){
                     score +=10;
-                    if(score == 60) {
+                    if(score == 60 || score == 120 || score == 180 || score == 240) {
                         level++;
                         timeVal -= 200;
                         regTime -= 200;
-                    }
-                    if(score == 120) {
-                        level++;
-                        timeVal -= 200;
-                        regTime -= 200;
-                    }
-                    if(score == 180) {
-                        level++;
-                        timeVal -= 200;
-                        regTime -= 200;
-                    }
-                    if(score == 240) {
-                        level++;
-                        timeVal -= 100;
-                        regTime -= 100;
                     }
                     for (int b = 0; b < usedBlocks.size(); b++) {
                             if(clearLine.contains(usedBlocks.get(b))){
