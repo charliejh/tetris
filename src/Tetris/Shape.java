@@ -38,6 +38,11 @@ abstract class Shape {
         }
     }
 
+    /**
+     * Used for creating new shapes of a specific type
+     */
+    abstract Shape returnNewShape();
+
 }
 
 /**
@@ -60,6 +65,10 @@ class sqShape extends Shape{
         }
     }
 
+    @Override
+    Shape returnNewShape() {
+        return new sqShape();
+    }
 }
 
 class lineShape extends Shape{
@@ -77,6 +86,11 @@ class lineShape extends Shape{
         for (int i = 1; i < 4; i++) {
             blocks[i] = new Block(center.getX() + shapeArr[0][i][0], center.getY() + shapeArr[0][i][1], color);
         }
+    }
+
+    @Override
+    Shape returnNewShape() {
+        return new lineShape();
     }
 
 }
@@ -98,6 +112,11 @@ class jShape extends Shape {
         }
     }
 
+    @Override
+    Shape returnNewShape() {
+        return new jShape();
+    }
+
 }
 
 class lShape extends Shape {
@@ -117,6 +136,12 @@ class lShape extends Shape {
         }
     }
 
+    @Override
+    Shape returnNewShape() {
+        return new lShape();
+    }
+
+
 }
 
 class tShape extends Shape {
@@ -134,6 +159,11 @@ class tShape extends Shape {
         for (int i = 1; i < 4; i++) {
             blocks[i] = new Block(center.getX() + shapeArr[0][i][0], center.getY() + shapeArr[0][i][1], color);
         }
+    }
+
+    @Override
+    Shape returnNewShape() {
+        return new tShape();
     }
 
 }
@@ -155,6 +185,11 @@ class sShape extends Shape {
         }
     }
 
+    @Override
+    Shape returnNewShape() {
+        return new sShape();
+    }
+
 }
 
 class zShape extends Shape {
@@ -172,6 +207,11 @@ class zShape extends Shape {
         for (int i = 1; i < 4; i++) {
             blocks[i] = new Block(center.getX() + shapeArr[0][i][0], center.getY() + shapeArr[0][i][1], color);
         }
+    }
+
+    @Override
+    Shape returnNewShape() {
+        return new zShape();
     }
 
 }

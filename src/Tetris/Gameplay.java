@@ -20,7 +20,6 @@ class Gameplay extends JComponent implements KeyListener {
     private ArrayList<Block> usedBlocks = new ArrayList<>();
     /** Variables used for the timer */
     private int timeVal = 900;
-    private int fastTime = 50;
     private int dropTime = 0;
     private int regTime = 900;
     private Timer timer;
@@ -43,6 +42,14 @@ class Gameplay extends JComponent implements KeyListener {
     }
 
     /**
+     * Starts the timer
+     */
+    void startGame(){
+        timer = new Timer(10, e -> update());
+        timer.start();
+    }
+
+    /**
      * Creates all 7 shapes and then shuffles them
      */
     private void makeShapes(){
@@ -60,37 +67,10 @@ class Gameplay extends JComponent implements KeyListener {
     }
 
     /**
-     * Starts the timer
-     */
-    void startGame(){
-        timer = new Timer(10, e -> update());
-        timer.start();
-    }
-
-
-    /**
-     * Draws the components
-     */
-    public void paintComponent(Graphics graphics) {
-        drawGridBackground(graphics);
-        drawScoreBoard(graphics);
-        drawNextShape(graphics);
-        activeShape.draw(graphics);
-        for (int i = 0; i < usedBlocks.size(); i++) {
-            usedBlocks.get(i).draw(graphics);
-        }
-        if(gamePaused){
-            drawPauseScreen(graphics, "Paused!", 100);
-        }
-        if(gameOver){
-            drawPauseScreen(graphics, "Game Over!", 70);
-        }
-    }
-
-    /**
      * Updates the game
      */
     private void update() {
+        if (nextShapes.size() < 2) makeShapes();
         boolean justCreated = false;
         dropTime += 10;
         if(dropTime >= timeVal){
@@ -98,9 +78,6 @@ class Gameplay extends JComponent implements KeyListener {
                 for (int i = 0; i < 4; i++) {
                     Block blocks = new Block(activeShape.blocks[i].getX(), activeShape.blocks[i].getY(), activeShape.color);
                     usedBlocks.add(blocks);
-                }
-                if (nextShapes.size() < 2) {
-                    makeShapes();
                 }
                 rotation = 0;
                 activeShape = nextShapes.get(0);
@@ -111,10 +88,7 @@ class Gameplay extends JComponent implements KeyListener {
                     gameOver = true;
                 }
             }
-            if (testCollisionDown(activeShape) && !justCreated){
-                nextMove();
-                frame.repaint();
-            }
+            if (testCollisionDown(activeShape) && !justCreated) nextMove();
             dropTime = 0;
         }
         clearLine();
@@ -135,31 +109,8 @@ class Gameplay extends JComponent implements KeyListener {
      */
     private void rotateShape(Shape activeShape ){
         rotation += 1;
-        if(rotation > 3){
-            rotation = 0;
-        }
-        Shape temp;
-        if(activeShape.getClass() == lineShape.class){
-            temp = new lineShape();
-        }
-        else if(activeShape.getClass() == jShape.class){
-            temp = new jShape();
-        }
-        else if(activeShape.getClass() == lShape.class){
-            temp = new lShape();
-        }
-        else if(activeShape.getClass() == tShape.class){
-            temp = new tShape();
-        }
-        else if(activeShape.getClass() == sShape.class){
-            temp = new sShape();
-        }
-        else if(activeShape.getClass() == zShape.class){
-            temp = new zShape();
-        }
-        else {
-            temp = new sqShape();
-        }
+        if(rotation > 3) rotation = 0;
+        Shape temp = activeShape.returnNewShape();
         for (int i = 1; i < 4; i++) {
             activeShape.blocks[i].move(activeShape.center.getX() + temp.shapeArr[rotation][i][0], activeShape.center.getY() + temp.shapeArr[rotation][i][1]);
         }
@@ -169,28 +120,7 @@ class Gameplay extends JComponent implements KeyListener {
      * Tests for collision when rotating the activeShape
      */
     private boolean testCollisionRotation(){
-        Shape temp;
-        if(activeShape.getClass() == lineShape.class){
-            temp = new lineShape();
-        }
-        else if(activeShape.getClass() == jShape.class){
-            temp = new jShape();
-        }
-        else if(activeShape.getClass() == lShape.class){
-            temp = new lShape();
-        }
-        else if(activeShape.getClass() == tShape.class){
-            temp = new tShape();
-        }
-        else if(activeShape.getClass() == sShape.class){
-            temp = new sShape();
-        }
-        else if(activeShape.getClass() == zShape.class){
-            temp = new zShape();
-        }
-        else {
-            temp = new sqShape();
-        }
+        Shape temp = activeShape.returnNewShape();
         for (int i = 0; i < activeShape.blocks.length; i++) {
             temp.blocks[i].setX(activeShape.blocks[i].getX());
             temp.blocks[i].setY(activeShape.blocks[i].getY());
@@ -278,19 +208,24 @@ class Gameplay extends JComponent implements KeyListener {
         for (int i = 0; i < 20; i++) {
             ArrayList<Block> clearLine = new ArrayList<>();
             for (int j = 0; j < usedBlocks.size(); j++) {
-                if(usedBlocks.get(j).getY() == i){
+                if (usedBlocks.get(j).getY() == i){
                     clearLine.add(usedBlocks.get(j));
                 }
-                if(clearLine.size() == 10){
+                if (clearLine.size() == 10){
                     score +=10;
-                    if(score == 60 || score == 120 || score == 180 || score == 240) {
+                    if (score == 60 || score == 120 || score == 180) {
                         level++;
                         timeVal -= 200;
                         regTime -= 200;
                     }
+                    if (score == 240) {
+                        level++;
+                        timeVal -= 100;
+                        regTime -= 100;
+                    }
                     for (int b = 0; b < usedBlocks.size(); b++) {
-                            if(clearLine.contains(usedBlocks.get(b))){
-                                usedBlocks.remove(usedBlocks.get(b));
+                        if(clearLine.contains(usedBlocks.get(b))){
+                            usedBlocks.remove(usedBlocks.get(b));
                             b--;
                         }
                     }
@@ -301,6 +236,25 @@ class Gameplay extends JComponent implements KeyListener {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Draws the components
+     */
+    public void paintComponent(Graphics graphics) {
+        drawGridBackground(graphics);
+        drawScoreBoard(graphics);
+        drawNextShape(graphics);
+        activeShape.draw(graphics);
+        for (int i = 0; i < usedBlocks.size(); i++) {
+            usedBlocks.get(i).draw(graphics);
+        }
+        if(gamePaused){
+            drawPauseScreen(graphics, "Paused!", 100);
+        }
+        if(gameOver){
+            drawPauseScreen(graphics, "Game Over!", 70);
         }
     }
 
@@ -400,15 +354,9 @@ class Gameplay extends JComponent implements KeyListener {
      */
     public void keyTyped(KeyEvent k){}
     public void keyPressed(KeyEvent k){
-        if(k.getKeyCode() == KeyEvent.VK_SPACE){
-            timeVal = fastTime;
-        }
-        if(k.getKeyCode() == KeyEvent.VK_P){
-            gamePaused = true;
-        }
-        if(k.getKeyCode() == KeyEvent.VK_R){
-            gamePaused = false;
-        }
+        if(k.getKeyCode() == KeyEvent.VK_SPACE) timeVal = 50;
+        if(k.getKeyCode() == KeyEvent.VK_P) gamePaused = true;
+        if(k.getKeyCode() == KeyEvent.VK_R) gamePaused = false;
         if((k.getKeyCode() == KeyEvent.VK_UP || k.getKeyCode() == KeyEvent.VK_DOWN) && !gamePaused){
             if (!testCollisionRotation()) {
                 rotation -= 1;
@@ -417,25 +365,16 @@ class Gameplay extends JComponent implements KeyListener {
                 }
                 rotateShape(activeShape);
             }
-            frame.repaint();
         }
         if(k.getKeyCode() == KeyEvent.VK_LEFT && !gamePaused){
-            if (testCollisionLeft(activeShape) && !gameOver){
-                activeShape.move(-1, 0);
-            }
-            frame.repaint();
+            if (testCollisionLeft(activeShape) && !gameOver) activeShape.move(-1, 0);
         }
         if(k.getKeyCode() == KeyEvent.VK_RIGHT && !gamePaused){
-            if (testCollisionRight(activeShape) && !gameOver){
-                activeShape.move(1, 0);
-            }
-            frame.repaint();
+            if (testCollisionRight(activeShape) && !gameOver) activeShape.move(1, 0);
         }
     }
     public void keyReleased(KeyEvent k){
-        if(k.getKeyCode() == KeyEvent.VK_SPACE){
-            timeVal = regTime;
-        }
+        if(k.getKeyCode() == KeyEvent.VK_SPACE) timeVal = regTime;
     }
 
 }
