@@ -44,7 +44,7 @@ class Gameplay extends JComponent implements KeyListener {
     /**
      * Starts the timer
      */
-    void startGame(){
+    void startGame() {
         timer = new Timer(10, e -> update());
         timer.start();
     }
@@ -52,7 +52,7 @@ class Gameplay extends JComponent implements KeyListener {
     /**
      * Creates all 7 shapes and then shuffles them
      */
-    private void makeShapes(){
+    private void makeShapes() {
         rotation = 0;
         ArrayList<Shape> tempShapeArrayList = new ArrayList<>();
         tempShapeArrayList.add(new sqShape());
@@ -98,7 +98,7 @@ class Gameplay extends JComponent implements KeyListener {
     /**
      * Moves the activeShape 0 and the x axis and 1 on the y axis
      */
-    private void nextMove(){
+    private void nextMove() {
         if(!gamePaused){
             activeShape.move(0, 1);
         }
@@ -107,7 +107,7 @@ class Gameplay extends JComponent implements KeyListener {
     /**
      * Rotates the shape using the shapes next set of 3D coordinates
      */
-    private void rotateShape(Shape activeShape ){
+    private void rotateShape(Shape activeShape ) {
         rotation += 1;
         if(rotation > 3) rotation = 0;
         Shape temp = activeShape.returnNewShape();
@@ -119,7 +119,7 @@ class Gameplay extends JComponent implements KeyListener {
     /**
      * Tests for collision when rotating the activeShape
      */
-    private boolean testCollisionRotation(){
+    private boolean testCollisionRotation() {
         Shape temp = activeShape.returnNewShape();
         for (int i = 0; i < activeShape.blocks.length; i++) {
             temp.blocks[i].setX(activeShape.blocks[i].getX());
@@ -187,7 +187,7 @@ class Gameplay extends JComponent implements KeyListener {
      * Tests the activeShape for collision when falling down
      * Returns false if the shape collides downwards
      */
-    private boolean testCollisionDown(Shape activeShape){
+    private boolean testCollisionDown(Shape activeShape) {
         for (int i = 0; i < activeShape.blocks.length; i++) {
             if(activeShape.blocks[i].getY() >= 19) {
                 return false;
@@ -204,7 +204,7 @@ class Gameplay extends JComponent implements KeyListener {
     /**
      * Clears full lines and increases the level if the score exceeds certain numbers
      */
-    private void clearLine(){
+    private void clearLine() {
         for (int i = 0; i < 20; i++) {
             ArrayList<Block> clearLine = new ArrayList<>();
             for (int j = 0; j < usedBlocks.size(); j++) {
