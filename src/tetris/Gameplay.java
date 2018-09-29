@@ -1,331 +1,192 @@
-package Tetris;
+package tetris;
 
+import tetris.shapes.*;
+import tetris.shapes.Shape;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.ArrayList;
-import javax.swing.Timer;
-import static Tetris.Shape.rotation;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
-class Gameplay extends JComponent implements KeyListener {
+public class Gameplay extends JComponent implements KeyListener {
 
-    /** The frame to the application */
-    private Frame frame;
-    /** An ArrayList of the 7 shapes to drop down */
-    private ArrayList<Shape> nextShapes = new ArrayList<>();
-    /** The current falling piece */
-    private Shape activeShape;
-    /** An ArrayList of each fallen block that hasn't been cleared */
-    private ArrayList<Block> usedBlocks = new ArrayList<>();
-    /** Variables used for the timer */
-    private int timeVal = 900;
-    private int dropTime = 0;
-    private int regTime = 900;
-    private Timer timer;
-    /** Keeps track of the games state */
-    private static boolean gameOver = false;
-    private static boolean gamePaused = false;
-    /** Keeps track of the current score and the current level **/
-    private static int score = 0;
-    private static int level = 1;
+    private int score, level;
+    private List<Shape> shapesQueue;
+    private Shape fallingShape;
+    private List<Block> fallenShapes;
+    private Timer gameplayTimer, speedGameplayTimer;
+    private boolean gameOver, gamePaused;
 
-    /**
-     * Constructor
-     */
-    public Gameplay(Frame frame) {
-        this.frame = frame;
-        frame.addKeyListener(this);
-        makeShapes();
-        activeShape = nextShapes.get(0);
-        nextShapes.remove(0);
+    public Gameplay() {
+        score = 0;
+        level = 1;
+        shapesQueue = new ArrayList<>();
+        fallenShapes = new ArrayList<>();
+        createNewShapesToQueue();
+        fallingShape = getNextShapeFromList();
+        gameplayTimer = new Timer(800, event -> flowOfGameplay());
+        speedGameplayTimer = new Timer(30, event -> flowOfGameplay());
     }
 
-    /**
-     * Starts the timer
-     */
-    void startGame() {
-        timer = new Timer(10, e -> update());
-        timer.start();
+    public void startGame() {
+        gameplayTimer.start();
     }
 
-    /**
-     * Creates all 7 shapes and then shuffles them
-     */
-    private void makeShapes() {
-        rotation = 0;
-        ArrayList<Shape> tempShapeArrayList = new ArrayList<>();
-        tempShapeArrayList.add(new sqShape());
-        tempShapeArrayList.add(new lineShape());
-        tempShapeArrayList.add(new jShape());
-        tempShapeArrayList.add(new lShape());
-        tempShapeArrayList.add(new tShape());
-        tempShapeArrayList.add(new sShape());
-        tempShapeArrayList.add(new zShape());
-        Collections.shuffle(tempShapeArrayList);
-        nextShapes.addAll(tempShapeArrayList);
+    private void endGame() {
+        gameOver = true;
+        gameplayTimer.stop();
+        speedGameplayTimer.stop();
     }
 
-    /**
-     * Updates the game
-     */
-    private void update() {
-        if (nextShapes.size() < 2) makeShapes();
-        boolean justCreated = false;
-        dropTime += 10;
-        if(dropTime >= timeVal){
-            if (!testCollisionDown(activeShape)) {
-                for (int i = 0; i < 4; i++) {
-                    Block blocks = new Block(activeShape.blocks[i].getX(), activeShape.blocks[i].getY(), activeShape.color);
-                    usedBlocks.add(blocks);
-                }
-                rotation = 0;
-                activeShape = nextShapes.get(0);
-                justCreated = true;
-                nextShapes.remove(0);
-                if(!testCollisionDown(activeShape)){
-                    timer.stop();
-                    gameOver = true;
-                }
+    private void flowOfGameplay() {
+        if (!gamePaused && !gameOver) {
+            if (shapesQueue.size() < 2) {
+                createNewShapesToQueue();
             }
-            if (testCollisionDown(activeShape) && !justCreated) nextMove();
-            dropTime = 0;
-        }
-        clearLine();
-        frame.repaint();
-    }
-
-    /**
-     * Moves the activeShape 0 and the x axis and 1 on the y axis
-     */
-    private void nextMove() {
-        if(!gamePaused){
-            activeShape.move(0, 1);
-        }
-    }
-
-    /**
-     * Rotates the shape using the shapes next set of 3D coordinates
-     */
-    private void rotateShape(Shape activeShape ) {
-        rotation += 1;
-        if(rotation > 3) rotation = 0;
-        Shape temp = activeShape.returnNewShape();
-        for (int i = 1; i < 4; i++) {
-            activeShape.blocks[i].move(activeShape.center.getX() + temp.shapeArr[rotation][i][0], activeShape.center.getY() + temp.shapeArr[rotation][i][1]);
-        }
-    }
-
-    /**
-     * Tests for collision when rotating the activeShape
-     */
-    private boolean testCollisionRotation() {
-        Shape temp = activeShape.returnNewShape();
-        for (int i = 0; i < activeShape.blocks.length; i++) {
-            temp.blocks[i].setX(activeShape.blocks[i].getX());
-            temp.blocks[i].setY(activeShape.blocks[i].getY());
-        }
-        rotateShape(temp);
-        for (int i = 0; i < temp.blocks.length; i++) {
-            if (temp.blocks[i].getX() < 0 || temp.blocks[i].getX() > 9 || temp.blocks[i].getY() > 18 || temp.blocks[i].getY() < 0) {
-                rotation -= 1;
-                return true;
-            }
-            for (int j = 0; j < usedBlocks.size(); j++) {
-                if (temp.blocks[i].getX() == usedBlocks.get(j).getX() && temp.blocks[i].getY() == usedBlocks.get(j).getY()) {
-                    rotation -= 1;
-                    return true;
+            if (canShapeMove(Direction.DOWN)) {
+                fallingShape.moveShapeDirection(Direction.DOWN);
+            } else {
+                addFallingShapeToFallenShapes();
+                clearFullLines();
+                fallingShape = getNextShapeFromList();
+                if (!canShapeMove(Direction.DOWN)) {
+                    endGame();
                 }
             }
         }
-        return false;
+        repaint();
     }
 
-    /**
-     * Tests for collision when moving the activeShape to left
-     * Returns false if activeShape will collide
-     */
-    private boolean testCollisionLeft(Shape activeShape) {
-        for (int i = 0; i < activeShape.blocks.length; i++) {
-            if (activeShape.blocks[i].getX() == 0) {
-                return false;
-            }
-            for (int j = 0; j < usedBlocks.size(); j++) {
-                if (activeShape.blocks[i].getX() - 1 == usedBlocks.get(j).getX() && activeShape.blocks[i].getY() == usedBlocks.get(j).getY()) {
-                    return false;
-                }
-                if (activeShape.blocks[i].getX() == usedBlocks.get(j).getX() && activeShape.blocks[i].getY() == usedBlocks.get(j).getY()) {
-                    return false;
-                }
-            }
+    private void createNewShapesToQueue() {
+        ArrayList<Shape> shapesArrayList = new ArrayList<>();
+        shapesArrayList.add(new JShape(Constants.J_SHAPE_COLOR));
+        shapesArrayList.add(new SquareShape(Constants.SQUARE_SHAPE_COLOR));
+        shapesArrayList.add(new LineShape(Constants.LINE_SHAPE_COLOR));
+        shapesArrayList.add(new LShape(Constants.L_SHAPE_COLOR));
+        shapesArrayList.add(new SShape(Constants.S_SHAPE_COLOR));
+        shapesArrayList.add(new TShape(Constants.T_SHAPE_COLOR));
+        shapesArrayList.add(new ZShape(Constants.Z_SHAPE_COLOR));
+        Collections.shuffle(shapesArrayList);
+        shapesQueue.addAll(shapesArrayList);
+    }
+
+    private void addFallingShapeToFallenShapes() {
+        fallenShapes.addAll(Arrays.asList(fallingShape.getShapeBlocks()));
+    }
+
+    private Shape getNextShapeFromList() {
+        return shapesQueue.remove(0);
+    }
+
+    private boolean canShapeMove(Direction direction) {
+        boolean canShapeMove = true;
+        switch (direction) {
+            case DOWN:
+                fallingShape.moveShapeDirection(Direction.DOWN);
+                canShapeMove = !(fallingShape.doesShapeCollide(fallenShapes) || fallingShape.getMaxYValue() > 19);
+                fallingShape.moveShapeDirection(Direction.UP);
+                break;
+            case LEFT:
+                fallingShape.moveShapeDirection(Direction.LEFT);
+                canShapeMove = !(fallingShape.doesShapeCollide(fallenShapes) || fallingShape.getMinXValue() < 0);
+                fallingShape.moveShapeDirection(Direction.RIGHT);
+                break;
+            case RIGHT:
+                fallingShape.moveShapeDirection(Direction.RIGHT);
+                canShapeMove = !(fallingShape.doesShapeCollide(fallenShapes) || fallingShape.getMaxXValue() > 9);
+                fallingShape.moveShapeDirection(Direction.LEFT);
+                break;
         }
-        return true;
+        return canShapeMove;
     }
 
-    /**
-     * Tests for collision when moving the activeShape to right
-     * Returns false if activeShape will collide
-     */
-    private boolean testCollisionRight(Shape activeShape) {
-        for (int i = 0; i < activeShape.blocks.length; i++) {
-            if (activeShape.blocks[i].getX() == 9) {
-                return false;
-            }
-            for (int j = 0; j < usedBlocks.size(); j++) {
-                if (activeShape.blocks[i].getX() + 1 == usedBlocks.get(j).getX() && activeShape.blocks[i].getY() == usedBlocks.get(j).getY()) {
-                    return false;
-                }
-                if (activeShape.blocks[i].getX() == usedBlocks.get(j).getX() && activeShape.blocks[i].getY() == usedBlocks.get(j).getY()) {
-                    return false;
-                }
-            }
-        }
-        return true;
+    private boolean canShapeRotate() {
+        fallingShape.rotateShape(Direction.RIGHT);
+        boolean canShapeRotate =  !(fallingShape.doesShapeCollide(fallenShapes)
+                || fallingShape.getMaxXValue() > 9
+                || fallingShape.getMinXValue() < 0
+                || fallingShape.getMaxYValue() > 19
+                || fallingShape.getMinYValue() < 0);
+        fallingShape.rotateShape(Direction.LEFT);
+        return canShapeRotate;
     }
 
-    /**
-     * Tests the activeShape for collision when falling down
-     * Returns false if the shape collides downwards
-     */
-    private boolean testCollisionDown(Shape activeShape) {
-        for (int i = 0; i < activeShape.blocks.length; i++) {
-            if(activeShape.blocks[i].getY() >= 19) {
-                return false;
-            }
-            for (int j = 0; j < usedBlocks.size(); j++) {
-                if(activeShape.blocks[i].getX() == usedBlocks.get(j).getX() && activeShape.blocks[i].getY() + 1 == usedBlocks.get(j).getY()){
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Clears full lines and increases the level if the score exceeds certain numbers
-     */
-    private void clearLine() {
-        for (int i = 0; i < 20; i++) {
-            ArrayList<Block> clearLine = new ArrayList<>();
-            for (int j = 0; j < usedBlocks.size(); j++) {
-                if (usedBlocks.get(j).getY() == i){
-                    clearLine.add(usedBlocks.get(j));
-                }
-                if (clearLine.size() == 10){
-                    score +=10;
-                    if (score == 60 || score == 120 || score == 180) {
-                        level++;
-                        timeVal -= 200;
-                        regTime -= 200;
-                    }
-                    if (score == 240) {
-                        level++;
-                        timeVal -= 100;
-                        regTime -= 100;
-                    }
-                    for (int b = 0; b < usedBlocks.size(); b++) {
-                        if(clearLine.contains(usedBlocks.get(b))){
-                            usedBlocks.remove(usedBlocks.get(b));
-                            b--;
-                        }
-                    }
-                    for (int k = 0; k < usedBlocks.size(); k++) {
-                        if(usedBlocks.get(k).getY() < i){
-                            usedBlocks.get(k).move(usedBlocks.get(k).getX(), usedBlocks.get(k).getY() + 1);
-                        }
+    private void clearFullLines() {
+        for (int i = 0; i < Constants.GRID_HEIGHT; i++) {
+            int lineToCheck = i;
+            List<Block> line = fallenShapes.stream().filter(block -> block.getY() == lineToCheck).collect(Collectors.toList());
+            if (line.size() == 10) {
+                fallenShapes.removeAll(line);
+                for (Block block : fallenShapes) {
+                    if (block.getY() < lineToCheck) {
+                        block.moveBlock(Direction.DOWN);
                     }
                 }
+                score += 10;
+                increaseLevel();
             }
         }
     }
 
-    /**
-     * Draws the components
-     */
+    private void increaseLevel() {
+//        level = score != 0 && score % 50 == 0 && level < 5 ? level + 1 : level;
+        switch (score) {
+            case 50:
+                level++;
+                gameplayTimer.setDelay(600);
+                gameplayTimer.setInitialDelay(600);
+                break;
+            case 100:
+                level++;
+                gameplayTimer.setDelay(450);
+                gameplayTimer.setInitialDelay(450);
+                break;
+            case 150:
+                level++;
+                gameplayTimer.setDelay(300);
+                gameplayTimer.setInitialDelay(300);
+                break;
+            case 200:
+                level++;
+                gameplayTimer.setDelay(200);
+                gameplayTimer.setInitialDelay(200);
+                break;
+        }
+    }
+
+    @Override
     public void paintComponent(Graphics graphics) {
+        super.paintComponent(graphics);
+        fallingShape.drawShape(graphics);
+        drawNextShapeArea(graphics);
+        for (Block block : fallenShapes) {
+            block.drawBlock(graphics);
+        }
         drawGridBackground(graphics);
-        drawScoreBoard(graphics);
-        drawNextShape(graphics);
-        activeShape.draw(graphics);
-        for (int i = 0; i < usedBlocks.size(); i++) {
-            usedBlocks.get(i).draw(graphics);
+        drawSidePanel(graphics);
+        if(gameOver) {
+            drawPauseScreen(graphics, "Game Over!", 75);
         }
-        if(gamePaused){
-            drawPauseScreen(graphics, "Paused!", 100);
-        }
-        if(gameOver){
-            drawPauseScreen(graphics, "Game Over!", 70);
+        if(gamePaused) {
+            drawPauseScreen(graphics, "Paused!", 120);
         }
     }
 
-    /**
-     * Draws the next shape in the scoreboard area
-     */
-    private void drawNextShape(Graphics graphics) {
-        graphics.setColor(new Color(0,0,0, 120));
-        graphics.fillRect(420, 260,4 * 40, 3 * 40);
-        graphics.setColor(new Color(0,0,0));
-        graphics.drawRect(420, 260,4 * 40, 3 * 40);
-        for (int i = 280; i < 400; i+= 40) {
-            graphics.drawLine(420, i, 420 + (4 * 40), i );
-        }
-        for (int i = 440; i < 620; i+= 40) {
-            graphics.drawLine(i, 260, i, 260 + (3 * 40) );
-        }
-        Shape nextShapeToDraw;
-        if(nextShapes.get(0).getClass() == lineShape.class){
-            nextShapeToDraw = new lineShape();
-            for (int i = 1; i < 4; i++) {
-                nextShapeToDraw.blocks[i].move(nextShapeToDraw.center.getX() + nextShapeToDraw.shapeArr[1][i][0], nextShapeToDraw.center.getY() + nextShapeToDraw.shapeArr[1][i][1]);
-            }
-            nextShapeToDraw.move(8, 7);
-        }
-        else if(nextShapes.get(0).getClass() == jShape.class) {
-            nextShapeToDraw = new jShape();
-            nextShapeToDraw.move(7, 7);
-        }
-        else if(nextShapes.get(0).getClass() == lShape.class) {
-            nextShapeToDraw = new lShape();
-            nextShapeToDraw.move(8, 7);
-        }
-        else if(nextShapes.get(0).getClass() == tShape.class) {
-            nextShapeToDraw = new tShape();
-            nextShapeToDraw.move(8, 7);
-        }
-        else if(nextShapes.get(0).getClass() == sShape.class) {
-            nextShapeToDraw = new sShape();
-            nextShapeToDraw.move(8, 7);
-        }
-        else if (nextShapes.get(0).getClass() == zShape.class) {
-            nextShapeToDraw = new zShape();
-            nextShapeToDraw.move(8, 7);
-        }
-        else {
-            nextShapeToDraw = new sqShape();
-            nextShapeToDraw.move(8, 7);
-        }
-        nextShapeToDraw.draw(graphics);
-    }
-
-    /**
-     * Draws the grid background
-     */
     private void drawGridBackground(Graphics graphics) {
-        graphics.setColor(new Color(64,64,64));
-        graphics.fillRect(0, 0, 400, 800);
         graphics.setColor(Color.BLACK);
-        for (int i = 0; i < 840; i += 40) {
-            graphics.drawLine(0, i, 400, i);
+        for (int i = 0; i < (Constants.GRID_HEIGHT + 1) * Constants.BLOCK_SIZE; i += Constants.BLOCK_SIZE) {
+            graphics.drawLine(0, i, Constants.GRID_WIDTH * Constants.BLOCK_SIZE, i);
         }
-        for (int i = 0; i < 440; i += 40) {
-            graphics.drawLine(i, 0, i, 800);
+        for (int i = 0; i < (Constants.GRID_WIDTH + 1) * Constants.BLOCK_SIZE; i += Constants.BLOCK_SIZE) {
+            graphics.drawLine(i, 0, i, Constants.GRID_HEIGHT * Constants.BLOCK_SIZE);
         }
     }
 
-    /**
-     * Draws the scoreboard
-     */
-    private void drawScoreBoard(Graphics graphics) {
+    private void drawSidePanel(Graphics graphics) {
         graphics.setColor(Color.white);
         graphics.setFont(new Font("Verdana", Font.PLAIN, 20));
         graphics.drawString("Charlie Harris", 430, 45);
@@ -334,47 +195,89 @@ class Gameplay extends JComponent implements KeyListener {
         graphics.drawString("Level: " + level, 462, 150);
         graphics.drawString("Next Shape:", 440, 230);
         graphics.setFont(new Font("Verdana", Font.PLAIN, 15));
-        graphics.drawString("P to Pause Game", 438, 450);
-        graphics.drawString("R to Resume Game", 428, 500);
+        graphics.drawString("Press P to", 460, 450);
+        graphics.drawString("Pause/Resume Game", 420, 470);
+        graphics.drawString("Press Q to Quit", 440, 510);
     }
 
-    /**
-     * Draws the pause screen
-     */
-    private void drawPauseScreen(Graphics graphics, String text, int x) {
-        graphics.setColor(new Color(0,0,0, 120));
-        graphics.fillRect(0,0,10 * 40, 20 *40);
+    private void drawNextShapeArea(Graphics graphics) {
+        graphics.setColor(Constants.DARK_BACKGROUND_COLOR);
+        graphics.fillRect(420, 260,4 * Constants.BLOCK_SIZE, 3 * Constants.BLOCK_SIZE);
+        graphics.setColor(Color.BLACK);
+        graphics.drawRect(420, 260,4 * Constants.BLOCK_SIZE, 3 * Constants.BLOCK_SIZE);
+        for (int i = 280; i < 400; i+= Constants.BLOCK_SIZE) {
+            graphics.drawLine(420, i, 420 + (4 * Constants.BLOCK_SIZE), i );
+        }
+        for (int i = 440; i < 620; i+= Constants.BLOCK_SIZE) {
+            graphics.drawLine(i, 260, i, 260 + (3 * Constants.BLOCK_SIZE) );
+        }
+        //TODO: move the shape into the area
+        shapesQueue.get(0).drawShape(graphics);
+    }
+
+    private void drawPauseScreen(Graphics graphics, String message, int xPosition) {
+        graphics.setColor(Constants.DARK_BACKGROUND_COLOR);
+        graphics.fillRect(0,0,Constants.BLOCK_SIZE * Constants.GRID_WIDTH, Constants.BLOCK_SIZE * Constants.GRID_HEIGHT);
         graphics.setColor(Color.white);
         graphics.setFont(new Font("Verdana", Font.PLAIN, 40));
-        graphics.drawString(text, x, 400);
+        graphics.drawString(message, xPosition, 400);
     }
 
-    /**
-     * KeyListener Methods
-     */
-    public void keyTyped(KeyEvent k){}
-    public void keyPressed(KeyEvent k){
-        if(k.getKeyCode() == KeyEvent.VK_SPACE) timeVal = 50;
-        if(k.getKeyCode() == KeyEvent.VK_P) gamePaused = true;
-        if(k.getKeyCode() == KeyEvent.VK_R) gamePaused = false;
-        if((k.getKeyCode() == KeyEvent.VK_UP || k.getKeyCode() == KeyEvent.VK_DOWN) && !gamePaused){
-            if (!testCollisionRotation()) {
-                rotation -= 1;
-                if(rotation == -1){
-                    rotation = 3;
+    @Override
+    public void keyPressed(KeyEvent key) {
+        switch (key.getKeyCode()) {
+            case KeyEvent.VK_RIGHT :
+                if (canShapeMove(Direction.RIGHT) && !gamePaused && !gameOver) {
+                    fallingShape.moveShapeDirection(Direction.RIGHT);
                 }
-                rotateShape(activeShape);
-            }
+                break;
+            case KeyEvent.VK_LEFT :
+                if (canShapeMove(Direction.LEFT) && !gamePaused && !gameOver) {
+                    fallingShape.moveShapeDirection(Direction.LEFT);
+                }
+                break;
+            case KeyEvent.VK_UP :
+                if (canShapeRotate() && !gamePaused && !gameOver) {
+                    fallingShape.rotateShape(Direction.RIGHT);
+                }
+                break;
+            case KeyEvent.VK_DOWN :
+                if (canShapeRotate() && !gamePaused && !gameOver) {
+                    fallingShape.rotateShape(Direction.RIGHT);
+                }
+                break;
+            case KeyEvent.VK_P:
+                if (!gameOver) {
+                    gamePaused = !gamePaused;
+                }
+                break;
+            case KeyEvent.VK_Q:
+                if (!gameOver) {
+                    gamePaused = false;
+                    endGame();
+                }
+                break;
+            case KeyEvent.VK_SPACE:
+                if (!gamePaused && !gameOver) {
+                    gameplayTimer.stop();
+                    speedGameplayTimer.start();
+                }
+                break;
         }
-        if(k.getKeyCode() == KeyEvent.VK_LEFT && !gamePaused){
-            if (testCollisionLeft(activeShape) && !gameOver) activeShape.move(-1, 0);
-        }
-        if(k.getKeyCode() == KeyEvent.VK_RIGHT && !gamePaused){
-            if (testCollisionRight(activeShape) && !gameOver) activeShape.move(1, 0);
+        repaint();
+    }
+
+    @Override
+    public void keyReleased(KeyEvent key) {
+        switch (key.getKeyCode()) {
+            case KeyEvent.VK_SPACE:
+                speedGameplayTimer.stop();
+                gameplayTimer.start();
+                break;
         }
     }
-    public void keyReleased(KeyEvent k){
-        if(k.getKeyCode() == KeyEvent.VK_SPACE) timeVal = regTime;
-    }
+
+    @Override
+    public void keyTyped(KeyEvent e) { }
 
 }
