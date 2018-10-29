@@ -158,7 +158,6 @@ public class Gameplay extends JComponent implements KeyListener {
     public void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
         fallingShape.drawShape(graphics);
-        drawNextShapeArea(graphics);
         for (Block block : fallenShapes) {
             block.drawBlock(graphics);
         }
@@ -185,26 +184,33 @@ public class Gameplay extends JComponent implements KeyListener {
     private void drawSidePanel(Graphics graphics) {
         graphics.setColor(Color.white);
         graphics.setFont(new Font("Verdana", Font.PLAIN, 20));
-        graphics.drawString("Charlie Harris", 430, 45);
-        graphics.drawString("1505033", 455, 70);
-        graphics.drawString("Score: " + score, 455, 120);
-        graphics.drawString("Level: " + level, 462, 150);
-        graphics.drawString("Next Shape:", 440, 230);
+        graphics.drawString("Charlie Harris", Constants.BLOCK_SIZE * Constants.GRID_WIDTH + 30, 45);
+        graphics.drawString("1505033", Constants.BLOCK_SIZE * Constants.GRID_WIDTH + 55, 70);
+        graphics.drawString("Score: " + score, Constants.BLOCK_SIZE * Constants.GRID_WIDTH + 55, 120);
+        graphics.drawString("Level: " + level, Constants.BLOCK_SIZE * Constants.GRID_WIDTH + 62, 150);
+        graphics.drawString("Next Shape:", Constants.BLOCK_SIZE * Constants.GRID_WIDTH + 40, 230);
         graphics.setFont(new Font("Verdana", Font.PLAIN, 15));
-        graphics.drawString("Press P to", 460, 450);
-        graphics.drawString("Pause/Resume Game", 420, 470);
-        graphics.drawString("Press Q to Quit", 440, 510);
+        graphics.drawString("Press P to", Constants.BLOCK_SIZE * Constants.GRID_WIDTH + 60, 450);
+        graphics.drawString("Pause/Resume Game", Constants.BLOCK_SIZE * Constants.GRID_WIDTH + 20, 470);
+        graphics.drawString("Press Q to Quit", Constants.BLOCK_SIZE * Constants.GRID_WIDTH + 40, 510);
+        drawNextShapeArea(graphics);
     }
 
     private void drawNextShapeArea(Graphics graphics) {
         graphics.setColor(Constants.DARK_BACKGROUND_COLOR);
-        graphics.fillRect(420, 260,4 * Constants.BLOCK_SIZE, 3 * Constants.BLOCK_SIZE);
+        graphics.fillRect(Constants.BLOCK_SIZE * Constants.GRID_WIDTH + 20,
+                260,
+                4 * Constants.BLOCK_SIZE,
+                3 * Constants.BLOCK_SIZE);
         graphics.setColor(Color.BLACK);
-        graphics.drawRect(420, 260,4 * Constants.BLOCK_SIZE, 3 * Constants.BLOCK_SIZE);
-        for (int i = 280; i < 400; i+= Constants.BLOCK_SIZE) {
-            graphics.drawLine(420, i, 420 + (4 * Constants.BLOCK_SIZE), i );
+        graphics.drawRect(Constants.BLOCK_SIZE * Constants.GRID_WIDTH + 20,
+                260,
+                4 * Constants.BLOCK_SIZE,
+                3 * Constants.BLOCK_SIZE);
+        for (int i = 280; i < Constants.BLOCK_SIZE * Constants.GRID_WIDTH; i += Constants.BLOCK_SIZE) {
+            graphics.drawLine(Constants.BLOCK_SIZE * Constants.GRID_WIDTH + 20, i, Constants.BLOCK_SIZE * Constants.GRID_WIDTH + 20 + (4 * Constants.BLOCK_SIZE), i );
         }
-        for (int i = 440; i < 620; i+= Constants.BLOCK_SIZE) {
+        for (int i = 440; i < 620; i += Constants.BLOCK_SIZE) {
             graphics.drawLine(i, 260, i, 260 + (3 * Constants.BLOCK_SIZE) );
         }
         //TODO: move the shape into the area
@@ -216,7 +222,7 @@ public class Gameplay extends JComponent implements KeyListener {
         graphics.fillRect(0,0,Constants.BLOCK_SIZE * Constants.GRID_WIDTH, Constants.BLOCK_SIZE * Constants.GRID_HEIGHT);
         graphics.setColor(Color.white);
         graphics.setFont(new Font("Verdana", Font.PLAIN, 40));
-        graphics.drawString(message, xPosition, 400);
+        graphics.drawString(message, xPosition, Constants.BLOCK_SIZE * Constants.GRID_HEIGHT / 2);
     }
 
     @Override
