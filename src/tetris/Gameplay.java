@@ -133,25 +133,21 @@ public class Gameplay extends JComponent implements KeyListener {
     }
 
     private void increaseLevel() {
-//        level = score != 0 && score % 50 == 0 && level < 5 ? level + 1 : level;
+        level = score != 0 && score % 50 == 0 && level < 5 ? level + 1 : level;
         switch (score) {
             case 50:
-                level++;
                 gameplayTimer.setDelay(600);
                 gameplayTimer.setInitialDelay(600);
                 break;
             case 100:
-                level++;
                 gameplayTimer.setDelay(450);
                 gameplayTimer.setInitialDelay(450);
                 break;
             case 150:
-                level++;
                 gameplayTimer.setDelay(300);
                 gameplayTimer.setInitialDelay(300);
                 break;
             case 200:
-                level++;
                 gameplayTimer.setDelay(200);
                 gameplayTimer.setInitialDelay(200);
                 break;
