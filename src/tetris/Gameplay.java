@@ -171,6 +171,14 @@ public class Gameplay extends JComponent implements KeyListener {
         }
     }
 
+    private void drawPauseScreen(Graphics graphics, String message, int xPosition) {
+        graphics.setColor(Constants.DARK_BACKGROUND_COLOR);
+        graphics.fillRect(0,0,Constants.BLOCK_SIZE * Constants.GRID_WIDTH, Constants.BLOCK_SIZE * Constants.GRID_HEIGHT);
+        graphics.setColor(Color.white);
+        graphics.setFont(new Font("Verdana", Font.PLAIN, 40));
+        graphics.drawString(message, xPosition, Constants.BLOCK_SIZE * Constants.GRID_HEIGHT / 2);
+    }
+
     private void drawGridBackground(Graphics graphics) {
         graphics.setColor(Color.BLACK);
         for (int i = 0; i < (Constants.GRID_HEIGHT + 1) * Constants.BLOCK_SIZE; i += Constants.BLOCK_SIZE) {
@@ -213,17 +221,43 @@ public class Gameplay extends JComponent implements KeyListener {
         for (int i = 440; i < 620; i += Constants.BLOCK_SIZE) {
             graphics.drawLine(i, 260, i, 260 + (3 * Constants.BLOCK_SIZE) );
         }
-        //TODO: move the shape into the area
-        shapesQueue.get(0).drawShape(graphics);
+        drawNextShapeInNextShapeArea(shapesQueue.get(0).getClass(), graphics);
     }
 
-    private void drawPauseScreen(Graphics graphics, String message, int xPosition) {
-        graphics.setColor(Constants.DARK_BACKGROUND_COLOR);
-        graphics.fillRect(0,0,Constants.BLOCK_SIZE * Constants.GRID_WIDTH, Constants.BLOCK_SIZE * Constants.GRID_HEIGHT);
-        graphics.setColor(Color.white);
-        graphics.setFont(new Font("Verdana", Font.PLAIN, 40));
-        graphics.drawString(message, xPosition, Constants.BLOCK_SIZE * Constants.GRID_HEIGHT / 2);
+    private void drawNextShapeInNextShapeArea(Class<? extends Shape> shapeClass, Graphics graphics) {
+        Shape nextShape;
+        if (shapeClass == SquareShape.class) {
+            nextShape = new SquareShape(Constants.SQUARE_SHAPE_COLOR);
+        }
+        else if (shapeClass == JShape.class) {
+            nextShape = new JShape(Constants.J_SHAPE_COLOR);
+        }
+        else if (shapeClass == LineShape.class) {
+            nextShape = new LineShape(Constants.LINE_SHAPE_COLOR);
+            nextShape.rotateShape(Direction.RIGHT);
+        }
+        else if (shapeClass == LShape.class) {
+            nextShape = new LShape(Constants.L_SHAPE_COLOR);
+        }
+        else if (shapeClass == SShape.class) {
+            nextShape = new SShape(Constants.S_SHAPE_COLOR);
+        }
+        else if (shapeClass == TShape.class) {
+            nextShape = new TShape(Constants.T_SHAPE_COLOR);
+        }
+        else {
+            nextShape = new ZShape(Constants.Z_SHAPE_COLOR);
+        }
+
+        if (nextShape.getClass() == JShape.class) {
+            nextShape.moveShape(7, 7);
+        }
+        else {
+            nextShape.moveShape(8, 7);
+        }
+        nextShape.drawShape(graphics);
     }
+
 
     @Override
     public void keyPressed(KeyEvent key) {
